@@ -3,12 +3,16 @@ const Joi = require('joi');
 
 const validarLogin = (req, res, next) => {
     const schema = Joi.object({
-        correo: Joi.string()
-            .email()
+        usuario: Joi.string()
+            .min(6)
+            .max(20)
+            .alphanum()
             .required()
             .messages({  
-                'string.email': 'Debe ser un correo electronico válido',
-                'any.required': 'El correo electronico es requerido'
+                'string.min': 'El usuario debe tener al menos 6 caracteres',
+                'string.max': 'El usuario no puede tener más de 20 caracteres',
+                'string.alphanum': 'El usuario solo puede contener letras y números',
+                'any.required': 'El usuario es requerido'
             }),
         clave: Joi.string()
             .min(8)
@@ -16,6 +20,7 @@ const validarLogin = (req, res, next) => {
             .required()
             .messages({  
                 'string.min': 'La contraseña debe tener almenos 8 caracteres',
+                'string.max': 'La contraseña no puede tener más de 12 caracteres',
                 'any.required': 'La contraseña es requerida'
             })
     });

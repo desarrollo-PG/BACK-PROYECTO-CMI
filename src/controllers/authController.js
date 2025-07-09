@@ -1,10 +1,11 @@
-const authService = require('../services/authService'); 
+const authService = require('../services/authService');
+const emailService = require('../services/EmailService');
 
 const login = async (req, res) => {
     try{
-        const { correo, clave } = req.body;
+        const { usuario, clave } = req.body;
 
-        const resultado = await authService.login(correo, clave);
+        const resultado = await authService.login(usuario, clave);
 
         res.status(200).json({
             success: true,
@@ -35,7 +36,24 @@ const logout = async (req, res) => {
     });
 };
 
+const RecuperarClave = async (req, res) => {
+    try{
+        const { correo } = req.body;
+
+        const claveRecuperada = await emailService.ResetearClave(correo);
+
+        res.status(200).json({
+            success: true,
+            message: 'Clave restaurada',
+            data: claveRecuperada
+        });
+    }catch(error){
+        console.error('Error en AuthController.login:', error.message);
+    }
+};
+
 module.exports = {
     login,
-    logout
+    logout,
+    RecuperarClave
 };

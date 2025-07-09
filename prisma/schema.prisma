@@ -11,6 +11,7 @@ datasource db {
 model usuario {
   idusuario                Int                       @id @default(autoincrement())
   fkrol                    Int
+  usuario                  String                    @unique @db.VarChar(20)
   clave                    String                    @db.VarChar(255)
   nombres                  String                    @db.VarChar(100)
   apellidos                String                    @db.VarChar(100)
@@ -30,11 +31,23 @@ model usuario {
   usuariomodificacion      String?                   @db.VarChar(100)
   fechamodificacion        DateTime?                 @db.Timestamp(6)
   estado                   Int?                      @default(1) @db.SmallInt
-  // agenda                   agenda[]
-  // detallehistorialclinico  detallehistorialclinico[]
-  // detallereferirpaciente   detallereferirpaciente[]
-  // inventariomedico         inventariomedico[]
+  //agenda                   agenda[]
+  //detallehistorialclinico  detallehistorialclinico[]
+  //detallereferirpaciente   detallereferirpaciente[]
+  //inventariomedico         inventariomedico[]
   rol                      rol                       @relation(fields: [fkrol], references: [idrol], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario_rol")
+}
+
+model rol {
+  idrol               Int       @id @default(autoincrement())
+  nombre              String    @db.VarChar(100)
+  descripcion         String?
+  usuariocreacion     String    @db.VarChar(100)
+  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
+  usuariomodificacion String?   @db.VarChar(100)
+  fechamodificacion   DateTime? @db.Timestamp(6)
+  estado              Int?      @default(1) @db.SmallInt
+  usuario             usuario[]
 }
 
 // model agenda {
@@ -176,7 +189,7 @@ model usuario {
 //   usuario             usuario   @relation(fields: [fkusuario], references: [idusuario], onDelete: NoAction, onUpdate: NoAction, map: "fk_inventario_usuario")
 // }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+// /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 // model paciente {
 //   idpaciente               Int                       @id @default(autoincrement())
 //   fkexpediente             Int
@@ -209,15 +222,3 @@ model usuario {
 //   detallereferirpaciente   detallereferirpaciente[]
 //   expediente               expediente                @relation(fields: [fkexpediente], references: [idexpediente], onDelete: NoAction, onUpdate: NoAction, map: "fk_paciente_expediente")
 // }
-
-model rol {
-  idrol               Int       @id @default(autoincrement())
-  nombre              String    @db.VarChar(100)
-  descripcion         String?
-  usuariocreacion     String    @db.VarChar(100)
-  fechacreacion       DateTime? @default(now()) @db.Timestamp(6)
-  usuariomodificacion String?   @db.VarChar(100)
-  fechamodificacion   DateTime? @db.Timestamp(6)
-  estado              Int?      @default(1) @db.SmallInt
-  usuario             usuario[]
-}

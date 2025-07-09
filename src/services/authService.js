@@ -5,12 +5,23 @@ const { generarToken } = require('../utils/jwt');        // función para crear 
 const prisma = new PrismaClient();
 
 class AuthService{
-    async login(correo_, clave_){
+    async login(usuario_, clave_){
         try{
             //Buscar usuario por email
             const usuario = await prisma.usuario.findUnique({ 
                 where: {
-                    correo: correo_.toLowerCase().trim()
+                    usuario: usuario_.toLowerCase().trim()
+                },
+                select:{
+                    idusuario:      true,
+                    usuario:        true,
+                    nombres:        true,
+                    apellidos:      true,
+                    puesto:         true,
+                    rutafotoperfil: true,
+                    fkrol:          true,
+                    estado:         true,
+                    clave:          true
                 }
             });
 
@@ -32,9 +43,10 @@ class AuthService{
 
             //Genera el token 
             const token = generarToken({
-                id: usuario.id,
-                correo: usuario.correo,
-                nombre: usuario.nombre
+                id:       usuario.idusuario,
+                usuario:  usuario.usuario,
+                nombre:   usuario.nombres,
+                apellido: usuario.apellidos
             });
 
             //Retornar datos (sin la contraseña)
