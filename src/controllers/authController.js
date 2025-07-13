@@ -40,15 +40,49 @@ const RecuperarClave = async (req, res) => {
     try{
         const { correo } = req.body;
 
-        const claveRecuperada = await emailService.ResetearClave(correo);
+        // Validar que el correo sea proporcionado
+        if (!correo) {
+            return res.status(400).json({
+                success: false,
+                message: 'El correo electrónico es requerido'
+            });
+        }
+
+        // Validar formato básico del correo
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Formato de correo electrónico inválido'
+            });
+        }
+
+        await emailService.ResetearClave(correo);
 
         res.status(200).json({
             success: true,
-            message: 'Clave restaurada',
-            data: claveRecuperada
+            message: 'Se ha enviado una contraseña temporal a tu correo electrónico'
         });
-    }catch(error){
-        console.error('Error en AuthController.login:', error.message);
+        
+    } catch(error) {
+        console.error('Error en AuthController.RecuperarClave:', error.message);
+        
+        // Manejo específico de errores basado en el mensaje
+        let statusCode = 500;
+        let message = 'Error interno del servidor';
+        
+        if (error.message === 'Credenciales inválidas') {
+            statusCode = 400;
+            message = 'El correo electrónico no está registrado en nuestro sistema';
+        } else if (error.message.includes('inactivo')) {
+            statusCode = 403;
+            message = 'Usuario inactivo. Contacte al administrador';
+        }
+        
+        res.status(statusCode).json({
+            success: false,
+            message: message
+        });
     }
 };
 
