@@ -27,16 +27,23 @@ class UsuarioService {
         try{
             const usuario = await prisma.usuario.findMany({
                 select:{
-                    idusuario:       true,
-                    fkrol:           true,
-                    usuario:         true,
-                    nombres:         true,
-                    apellidos:       true,
-                    correo:          true, 
-                    puesto:          true,
-                    telinstitucional: true,
-                    extension:       true,
-                    estado:          true
+                    idusuario:                true,
+                    fkrol:                    true,
+                    usuario:                  true,
+                    nombres:                  true,
+                    apellidos:                true,
+                    correo:                   true, 
+                    puesto:                   true,
+                    telinstitucional:         true,
+                    extension:                true,
+                    estado:                   true,
+                    profesion:                true,
+                    fechanacimiento:          true,
+                    telefonopersonal:         true,
+                    nombrecontactoemergencia: true,
+                    telefonoemergencia:       true,
+                    observaciones:            true,
+                    rutafotoperfil:           true
                 },
                 orderBy:{
                     usuario: 'asc'
@@ -406,8 +413,7 @@ class UsuarioService {
             await prisma.usuario.update({
                 where: { idusuario: parseInt(idusuario)},
                 data:{
-                    estado: 0,
-                    correo: `deleted_${Date.now()}_${usuarioExiste.correo}` // Evitar conflictos futuros
+                    estado: 0
                 }
             });
 
