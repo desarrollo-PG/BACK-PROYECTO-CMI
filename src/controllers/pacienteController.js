@@ -23,14 +23,6 @@ class PacienteController {
             estado: 1,
             ...whereCondition
           },
-          include: {
-            expediente: {
-              select: {
-                numeroexpediente: true,
-                historiaenfermedad: true
-              }
-            }
-          },
           skip,
           take: parseInt(limit),
           orderBy: {
@@ -74,23 +66,6 @@ class PacienteController {
         where: {
           idpaciente: parseInt(id),
           estado: 1
-        },
-        include: {
-          expediente: true,
-          agenda: {
-            include: {
-              usuario: {
-                select: {
-                  nombres: true,
-                  apellidos: true,
-                  puesto: true
-                }
-              }
-            },
-            orderBy: {
-              fechaatencion: 'desc'
-            }
-          }
         }
       });
 
@@ -115,7 +90,7 @@ class PacienteController {
     }
   }
 
-  // Crear nuevo paciente con expediente
+  // Crear nuevo paciente - CORREGIDO
   static async createPaciente(req, res) {
     try {
       const {
@@ -135,18 +110,13 @@ class PacienteController {
         telefonoencargado,
         municipio,
         aldea,
-        direccion,
-        // Datos del expediente
-        numeroexpediente,
-        historiaenfermedad,
-        antmedico,
-        antmedicamento,
-        anttraumaticos,
-        antfamiliar,
-        antalergico
+        direccion
       } = req.body;
 
-      const { usuario } = req.usuario; // Del middleware de autenticación
+      console.log('📝 Creando paciente con datos:', req.body);
+
+      // Obtener usuario del middleware o usar valor por defecto
+      const usuario = req.usuario?.usuario || 'sistema';
 
       // Verificar que el CUI no exista
       const existingPaciente = await prisma.paciente.findUnique({
@@ -160,84 +130,40 @@ class PacienteController {
         });
       }
 
-      // Generar número de expediente si no se proporciona
-      let numeroExp = numeroexpediente;
-      if (!numeroExp) {
-        const año = new Date().getFullYear();
-        const ultimoExpediente = await prisma.expediente.findFirst({
-          where: {
-            numeroexpediente: {
-              startsWith: año.toString()
-            }
-          },
-          orderBy: {
-            numeroexpediente: 'desc'
-          }
-        });
-
-        let numeroSecuencial = 1;
-        if (ultimoExpediente) {
-          const ultimoNumero = ultimoExpediente.numeroexpediente;
-          const parteSecuencial = ultimoNumero.split('-')[1];
-          numeroSecuencial = parseInt(parteSecuencial) + 1;
+      // Crear paciente directamente (sin expediente por ahora)
+      const paciente = await prisma.paciente.create({
+        data: {
+          nombres,
+          apellidos,
+          cui,
+          fechanacimiento: new Date(fechanacimiento),
+          genero,
+          tipoconsulta,
+          tipodiscapacidad: tipodiscapacidad || 'Ninguna',
+          telefonopersonal,
+          nombrecontactoemergencia,
+          telefonoemergencia,
+          nombreencargado,
+          dpiencargado,
+          telefonoencargado,
+          municipio,
+          aldea,
+          direccion,
+          fkexpediente: null,
+          usuariocreacion: usuario,
+          estado: 1
         }
-
-        numeroExp = `${año}-${numeroSecuencial.toString().padStart(6, '0')}`;
-      }
-
-      // Crear expediente y paciente en una transacción
-      const result = await prisma.$transaction(async (tx) => {
-        // Crear expediente
-        const expediente = await tx.expediente.create({
-          data: {
-            numeroexpediente: numeroExp,
-            historiaenfermedad,
-            antmedico,
-            antmedicamento,
-            anttraumaticos,
-            antfamiliar,
-            antalergico,
-            usuariocreacion: usuario
-          }
-        });
-
-        // Crear paciente
-        const paciente = await tx.paciente.create({
-          data: {
-            fkexpediente: expediente.idexpediente,
-            nombres,
-            apellidos,
-            cui,
-            fechanacimiento: new Date(fechanacimiento),
-            genero,
-            tipoconsulta,
-            tipodiscapacidad,
-            telefonopersonal,
-            nombrecontactoemergencia,
-            telefonoemergencia,
-            nombreencargado,
-            dpiencargado,
-            telefonoencargado,
-            municipio,
-            aldea,
-            direccion,
-            usuariocreacion: usuario
-          },
-          include: {
-            expediente: true
-          }
-        });
-
-        return paciente;
       });
+
+      console.log('✅ Paciente creado exitosamente:', paciente.idpaciente);
 
       res.status(201).json({
         success: true,
         message: 'Paciente creado exitosamente',
-        data: result
+        data: paciente
       });
     } catch (error) {
-      console.error('Error al crear paciente:', error);
+      console.error('❌ Error al crear paciente:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
@@ -250,8 +176,10 @@ class PacienteController {
   static async updatePaciente(req, res) {
     try {
       const { id } = req.params;
-      const { usuario } = req.usuario;
+      const usuario = req.usuario?.usuario || 'sistema';
       const updateData = { ...req.body };
+
+      console.log('📝 Actualizando paciente:', id, 'con datos:', updateData);
 
       // Verificar que el paciente existe
       const existingPaciente = await prisma.paciente.findFirst({
@@ -270,8 +198,11 @@ class PacienteController {
 
       // Si se está actualizando el CUI, verificar que no exista
       if (updateData.cui && updateData.cui !== existingPaciente.cui) {
-        const cuiExists = await prisma.paciente.findUnique({
-          where: { cui: updateData.cui }
+        const cuiExists = await prisma.paciente.findFirst({
+          where: { 
+            cui: updateData.cui,
+            idpaciente: { not: parseInt(id) }
+          }
         });
 
         if (cuiExists) {
@@ -296,11 +227,10 @@ class PacienteController {
           ...updateData,
           usuariomodificacion: usuario,
           fechamodificacion: new Date()
-        },
-        include: {
-          expediente: true
         }
       });
+
+      console.log('✅ Paciente actualizado exitosamente');
 
       res.json({
         success: true,
@@ -308,7 +238,7 @@ class PacienteController {
         data: pacienteActualizado
       });
     } catch (error) {
-      console.error('Error al actualizar paciente:', error);
+      console.error('❌ Error al actualizar paciente:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',
@@ -321,7 +251,9 @@ class PacienteController {
   static async deletePaciente(req, res) {
     try {
       const { id } = req.params;
-      const { usuario } = req.usuario;
+      const usuario = req.usuario?.usuario || 'sistema';
+
+      console.log('🗑️ Eliminando paciente:', id);
 
       // Verificar que el paciente existe
       const existingPaciente = await prisma.paciente.findFirst({
@@ -350,12 +282,14 @@ class PacienteController {
         }
       });
 
+      console.log('✅ Paciente eliminado exitosamente');
+
       res.json({
         success: true,
         message: 'Paciente eliminado exitosamente'
       });
     } catch (error) {
-      console.error('Error al eliminar paciente:', error);
+      console.error('❌ Error al eliminar paciente:', error);
       res.status(500).json({
         success: false,
         message: 'Error interno del servidor',

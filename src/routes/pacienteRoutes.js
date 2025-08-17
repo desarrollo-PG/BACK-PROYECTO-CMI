@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const PacienteController = require('../controllers/pacienteController');
 const autenticacion = require('../middlewares/auth');
-const { validarPaciente } = require('../middlewares/validacionMiddleware');
+const { validarPaciente } = require('../middlewares/validaPaciente');
 
 // GET /api/pacientes - Obtener todos los pacientes con paginación y búsqueda
 router.get('/', autenticacion.validarToken, autenticacion.verificarUsuarioEnBD, PacienteController.getAllPacientes);
