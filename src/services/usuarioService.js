@@ -120,14 +120,14 @@ class UsuarioService {
             if(clave.length < 8){
                 return{
                     success: false,
-                    message: 'La clave debe tener al menos 8 caracteres'
+                    message: 'La contraseña debe tener al menos 8 caracteres'
                 };
             }
 
             if(clave.length > 12){
                 return{
                     success: false,
-                    message: 'La clave debe tener maximo 12 caracteres'
+                    message: 'La contraseña debe tener maximo 12 caracteres'
                 };
             }
 
@@ -140,6 +140,20 @@ class UsuarioService {
                 return{
                     success: false,
                     message: 'El usuario ya existe'
+                };
+            }
+
+            //valida si correo existe en otro usuario
+            const emailExiste = await prisma.usuario.findFirst({
+                where: {
+                    correo: correo.toLowerCase()
+                }
+            });
+
+            if(emailExiste){
+                return {
+                    success: false,
+                    message: 'El correo ya es utilizado por otro usuario'
                 };
             }
 
@@ -247,7 +261,7 @@ class UsuarioService {
                 if(emailExiste){
                     return {
                         success: false,
-                        message: 'El correo ya se esta utilizando por otro usuario'
+                        message: 'El correo ya es utilizado por otro usuario'
                     };
                 }
 
@@ -258,14 +272,14 @@ class UsuarioService {
                 if(updateData.clave.length < 8){
                     return {
                         success: false,
-                        message: 'Clave debe tener al menos 8 caracteres'
+                        message: 'Contraseña debe tener al menos 8 caracteres'
                     };
                 }
 
                 if(updateData.clave.length > 12){
                     return {
                         success: false,
-                        message: 'Clave debe tener maximo 12 caracteres'
+                        message: 'Contraseña debe tener maximo 12 caracteres'
                     };
                 }
 
@@ -378,23 +392,27 @@ class UsuarioService {
                 };
             }
 
-            //verifica si el usuario existe
-            const usuarioExiste = await prisma.usuario.findUnique({
+            const usuario = await prisma.usuario.findUnique({
                 where:{
-                    idusuario: parseInt(idusuario),
-                    estado: 1
+                    idusuario: parseInt(idusuario)
                 }
             });
 
-            if(!usuarioExiste){
+            if(!usuario){
                 return{
                     success: false,
                     message: 'Usuario no encontrado'
                 };
             }
 
-            //verifica que no sea el ultimo admin
-            if(usuarioExiste.fkrol === 1){
+            if(usuario.estado === 0){
+                return{
+                    success: false,
+                    message: 'El usuario ya se encuentra inactivo'
+                };
+            }
+
+            if(usuario.fkrol === 1){
                 const adminContador = await prisma.usuario.count({
                     where:{
                         fkrol: 1,
@@ -426,69 +444,6 @@ class UsuarioService {
             throw error;
         }
     }
-
-    // // Verificar credenciales para login (método auxiliar)
-    // async verifyCredentials(email, password) {
-    //     try {
-    //     const user = await prisma.user.findUnique({
-    //         where: { 
-    //         email: email.toLowerCase(),
-    //         isActive: true 
-    //         }
-    //     });
-
-    //     if (!user) {
-    //         return {
-    //         success: false,
-    //         message: 'Credenciales inválidas'
-    //         };
-    //     }
-
-    //     const isPasswordValid = await bcrypt.compare(password, user.password);
-
-    //     if (!isPasswordValid) {
-    //         return {
-    //         success: false,
-    //         message: 'Credenciales inválidas'
-    //         };
-    //     }
-
-    //     return {
-    //         success: true,
-    //         data: {
-    //         id: user.id,
-    //         email: user.email,
-    //         name: user.name,
-    //         role: user.role
-    //         }
-    //     };
-    //     } catch (error) {
-    //     throw new Error(`Error al verificar credenciales: ${error.message}`);
-    //     }
-    // }
-
-    // // Obtener estadísticas de usuarios
-    // async getUserStats() {
-    //     try {
-    //     const [totalUsers, activeUsers, adminUsers] = await Promise.all([
-    //         prisma.user.count(),
-    //         prisma.user.count({ where: { isActive: true } }),
-    //         prisma.user.count({ where: { role: 'ADMIN', isActive: true } })
-    //     ]);
-
-    //     return {
-    //         success: true,
-    //         data: {
-    //         totalUsers,
-    //         activeUsers,
-    //         inactiveUsers: totalUsers - activeUsers,
-    //         adminUsers
-    //         }
-    //     };
-    //     } catch (error) {
-    //     throw new Error(`Error al obtener estadísticas: ${error.message}`);
-    //     }
-    // }
 }
 
 module.exports = new UsuarioService();
