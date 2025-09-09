@@ -58,12 +58,14 @@ app.use('/api/files', fileRoutes); // ← Esta ruta NO usará express.json()
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoute = require('./routes/usuarioRoutes');
 const pacienteRoutes = require('./routes/pacienteRoutes');
-const expedienteRoutes = require('./routes/expedienteRoutes'); // ⭐ NUEVA RUTA
+const expedienteRoutes = require('./routes/expedienteRoutes'); 
+const historialRoutes = require('./routes/historialMedico');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/usuario', usuarioRoute);
-app.use('/api/expedientes', expedienteRoutes); // ⭐ NUEVA RUTA REGISTRADA
+app.use('/api/expedientes', expedienteRoutes); 
+app.use('/api/historial', historialRoutes);
 
 // Ruta raíz
 app.get('/', (req, res) => {
@@ -98,6 +100,12 @@ app.get('/', (req, res) => {
         ver: 'GET /api/files/view/:fileName',
         eliminar: 'DELETE /api/files/delete/:pacienteId/:tipo',
         paciente: 'GET /api/files/patient/:pacienteId'
+      },
+      historial: {
+        obtener: 'GET /api/historial/paciente/:idpaciente',
+        crear: 'POST /api/historial/crear-sesion',
+        actualizar: 'PUT /api/historial/actualizar-sesion/:idhistorial',
+        subirArchivos: 'POST /api/historial/subir-archivos/:idpaciente'
       }
     }
   });
