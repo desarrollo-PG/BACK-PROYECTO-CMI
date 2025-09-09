@@ -35,4 +35,8 @@ router.post('/resetearPass',
   authController.RecuperarClave
 );
 
+router.post('/cambiarClave',
+  authController.CambiarClaveTemporal
+)
+
 module.exports = router;

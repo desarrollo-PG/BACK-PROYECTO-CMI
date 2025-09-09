@@ -31,6 +31,7 @@ model usuario {
   usuariomodificacion      String?                   @db.VarChar(100)
   fechamodificacion        DateTime?                 @db.Timestamp(6)
   estado                   Int?                      @default(1) @db.SmallInt
+  cambiarclave             Boolean                   @default(false)
   agendas                  agenda[]
   detallesHistorialClinico detallehistorialclinico[]
   referenciasPaciente      detallereferirpaciente[]
