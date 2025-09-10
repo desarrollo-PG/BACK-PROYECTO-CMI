@@ -47,7 +47,8 @@ class AuthService{
                 id:       usuario.idusuario,
                 usuario:  usuario.usuario,
                 nombre:   usuario.nombres,
-                apellido: usuario.apellidos
+                apellido: usuario.apellidos,
+                rutafotoperfil: usuario.rutafotoperfil
             });
 
             //Retornar datos (sin la contraseña)

@@ -15,7 +15,7 @@ app.use(helmet());
 
 // CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
@@ -58,12 +58,18 @@ app.use('/api/files', fileRoutes); // ← Esta ruta NO usará express.json()
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoute = require('./routes/usuarioRoutes');
 const pacienteRoutes = require('./routes/pacienteRoutes');
+const archivoRoutes = require('./routes/archivoRoutes');
+const { ServeFileController } = require('./controllers/serveFileController');
+
+const serveFileController = new ServeFileController();
 const expedienteRoutes = require('./routes/expedienteRoutes'); 
 const historialRoutes = require('./routes/historialMedico');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/pacientes', pacienteRoutes);
 app.use('/api/usuario', usuarioRoute);
+app.use('/api/archivo', archivoRoutes);
+app.get('/api/files/:filename', (req, res) => serveFileController.serveFile(req, res));
 app.use('/api/expedientes', expedienteRoutes); 
 app.use('/api/historial', historialRoutes);
 
