@@ -22,7 +22,7 @@ class AgendaService{
 
     async crearCita(agendaData){
         try{
-            const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte,
+            const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte, direccion,
                     usuariocreacion, estado } = agendaData;
 
             if(!fkusuario || !fkpaciente || !fechaatencion || !horaatencion || !usuariocreacion){
@@ -52,6 +52,7 @@ class AgendaService{
                     horariotransporte:  horariotransporte
                                         ? new Date(`1970-01-01T${horariotransporte}:00Z`)
                                         : null,
+                    direccion:          direccion,
                     usuariocreacion:    usuariocreacion,
                     estado:             parseInt(estado)
                 },
@@ -64,6 +65,7 @@ class AgendaService{
                     transporte:         true,
                     fechatransporte:    true,
                     horariotransporte:  true,
+                    direccion:          true,
                     estado:             true
                 }
             });
