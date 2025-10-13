@@ -20,6 +20,14 @@ router.get(
     agendaController.obtenerCitas
 );
 
+router.get(
+    '/transporte', 
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave, 
+    agendaController.obtenerCitasConTransporte
+);
+
 router.put(
     '/actualizarCita/:id',
     autenticacion.validarToken,

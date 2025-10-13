@@ -165,6 +165,153 @@ class AgendaService{
         }
     }
 
+    async obtenerCitasConTransporte(fecha) {
+        try {
+            console.log('📅 Fecha recibida:', fecha);
+
+            // Si no se proporciona fecha, usar la fecha actual en formato YYYY-MM-DD
+            let fechaBusqueda = fecha;
+            
+            if (!fechaBusqueda) {
+                const hoy = new Date();
+                // Ajustar a la zona horaria local antes de formatear
+                const offset = hoy.getTimezoneOffset();
+                const fechaLocal = new Date(hoy.getTime() - (offset * 60 * 1000));
+                fechaBusqueda = fechaLocal.toISOString().split('T')[0];
+            }
+            
+            console.log('🔍 Buscando citas para:', fechaBusqueda);
+
+            // SOLUCIÓN: Usar Prisma.sql para comparación exacta de fechas sin conversión
+            const citasConTransporte = await prisma.agenda.findMany({
+                where: {
+                    estado: 1,
+                    transporte: 1,
+                    // Comparación directa sin conversión de zona horaria
+                    fechatransporte: {
+                        equals: new Date(fechaBusqueda + 'T00:00:00.000Z')
+                    }
+                },
+                select: {
+                    idagenda:          true,
+                    fkusuario:         true,
+                    fkpaciente:        true,
+                    fechaatencion:     true,
+                    horaatencion:      true,
+                    comentario:        true,
+                    transporte:        true,
+                    fechatransporte:   true,
+                    horariotransporte: true,
+                    direccion:         true,
+                    estado:            true,
+
+                    usuario: {
+                        select: {
+                            idusuario: true,
+                            nombres:   true,
+                            apellidos: true,
+                            profesion: true
+                        }
+                    },
+                    paciente: {
+                        select: {
+                            idpaciente:        true,
+                            nombres:           true,
+                            apellidos:         true,
+                            cui:               true,
+                            nombreencargado:   true,
+                            telefonoencargado: true,
+                            municipio:         true,
+                            aldea:             true,
+                            direccion:         true
+                        }
+                    }
+                },
+                orderBy: [
+                    {
+                        horariotransporte: 'asc'
+                    }
+                ]
+            });
+
+            console.log('✅ Citas encontradas:', citasConTransporte.length);
+
+            // Formatear las fechas y horas para el frontend
+            const citasFormateadas = citasConTransporte.map(cita => {
+                // Formatear fecha de atención
+                let fechaAtencionStr = cita.fechaatencion;
+                if (cita.fechaatencion instanceof Date) {
+                    fechaAtencionStr = cita.fechaatencion.toISOString().split('T')[0];
+                }
+                
+                // Formatear hora de atención
+                let horaAtencionStr = cita.horaatencion;
+                if (cita.horaatencion instanceof Date) {
+                    horaAtencionStr = cita.horaatencion.toISOString().split('T')[1].substring(0, 8);
+                }
+                
+                // Formatear fecha de transporte
+                let fechaTransporteStr = cita.fechatransporte;
+                if (cita.fechatransporte instanceof Date) {
+                    fechaTransporteStr = cita.fechatransporte.toISOString().split('T')[0];
+                }
+                
+                // La hora de transporte ya viene en formato correcto
+                let horaTransporteStr = cita.horariotransporte;
+                
+                // Construir dirección completa del paciente
+                const direccionCompleta = cita.direccion || 
+                    [
+                        cita.paciente?.municipio,
+                        cita.paciente?.aldea,
+                        cita.paciente?.direccion
+                    ].filter(Boolean).join(', ');
+                
+                return {
+                    idagenda: cita.idagenda,
+                    fkusuario: cita.fkusuario,
+                    fkpaciente: cita.fkpaciente,
+                    fechaatencion: fechaAtencionStr,
+                    horaatencion: horaAtencionStr,
+                    comentario: cita.comentario,
+                    transporte: cita.transporte,
+                    fechatransporte: fechaTransporteStr,
+                    horariotransporte: horaTransporteStr,
+                    direccion: direccionCompleta,
+                    estado: cita.estado,
+                    usuario: {
+                        idusuario: cita.usuario.idusuario,
+                        nombres: cita.usuario.nombres,
+                        apellidos: cita.usuario.apellidos,
+                        profesion: cita.usuario.profesion || ''
+                    },
+                    paciente: {
+                        idpaciente: cita.paciente.idpaciente,
+                        nombres: cita.paciente.nombres,
+                        apellidos: cita.paciente.apellidos,
+                        cui: cita.paciente.cui || '',
+                        nombreencargado: cita.paciente.nombreencargado || '',
+                        telefonoencargado: cita.paciente.telefonoencargado || '',
+                        municipio: cita.paciente.municipio || '',
+                        aldea: cita.paciente.aldea || '',
+                        direccion: cita.paciente.direccion || ''
+                    }
+                };
+            });
+
+            return {
+                success: true,
+                data: citasFormateadas,
+                total: citasFormateadas.length,
+                fecha: fechaBusqueda
+            };
+        } catch (error) {
+            console.error("❌ Error en obtenerCitasConTransporte: ", error.message);
+            console.error("Stack:", error.stack);
+            throw error;
+        }
+    }
+
     async actualizarCita(idagenda, agendaData){
         try{
             const { fkusuario, fkpaciente, fechaatencion, horaatencion, comentario, transporte, fechatransporte, horariotransporte, direccion,

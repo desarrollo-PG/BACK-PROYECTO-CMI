@@ -37,6 +37,32 @@ const obtenerCitas = async (req, res) => {
     }
 };
 
+const obtenerCitasConTransporte = async (req, res) => {
+    try {
+        // Obtener la fecha del query param o usar fecha actual
+        const { fecha } = req.query;
+        
+        // Validar formato de fecha si se proporciona
+        if (fecha && !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Formato de fecha inválido. Use YYYY-MM-DD'
+            });
+        }
+
+        const resultado = await agendaService.obtenerCitasConTransporte(fecha);
+        
+        return res.status(200).json(resultado);
+    } catch (error) {
+        console.error('Error al obtener citas con transporte:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error interno del servidor',
+            error: error.message
+        });
+    }
+};
+
 const actualizarCita = async (req, res) => {
     try{
         const { id } = req.params;
@@ -82,6 +108,7 @@ const eliminarCita = async (req, res) => {
 module.exports = {
     crearCita,
     obtenerCitas,
+    obtenerCitasConTransporte,
     actualizarCita,
     eliminarCita
 };
