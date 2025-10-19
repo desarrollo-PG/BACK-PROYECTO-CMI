@@ -14,17 +14,13 @@ class AuthService{
                 where: {
                     usuario: usuario_.toLowerCase().trim()
                 },
-                select:{
-                    idusuario:      true,
-                    usuario:        true,
-                    nombres:        true,
-                    apellidos:      true,
-                    puesto:         true,
-                    rutafotoperfil: true,
-                    fkrol:          true,
-                    estado:         true,
-                    clave:          true,
-                    cambiarclave:   true
+                include: {
+                    rol: { 
+                        select: {
+                            idrol: true,
+                            nombre: true
+                        }
+                    }
                 }
             });
 
@@ -46,18 +42,22 @@ class AuthService{
 
             //Genera el token 
             const token = generarToken({
-                id:       usuario.idusuario,
-                usuario:  usuario.usuario,
-                nombre:   usuario.nombres,
-                apellido: usuario.apellidos,
-                rutafotoperfil: usuario.rutafotoperfil
+                id:             usuario.idusuario,
+                usuario:        usuario.usuario,
+                nombre:         usuario.nombres,
+                apellido:       usuario.apellidos,
+                rutafotoperfil: usuario.rutafotoperfil,
+                fkrol:          usuario.fkrol
             });
 
             //Retornar datos (sin la contraseña)
             const { clave: _, ...usuarioSinClave } = usuario;
             
             return {
-                usuario: usuarioSinClave,
+                usuario: {
+                    ...usuarioSinClave,
+                    rolNombre: usuario.rol.nombre
+                },
                 token,
                 cambiarclave: usuario.cambiarclave
             };
