@@ -10,7 +10,10 @@ class RolService{
                     nombre: true
                 },
                 where:{
-                    estado: 1
+                    estado: 1,
+                    idrol: {
+                        in: [1, 4, 5, 6, 14]
+                    }
                 }
             });
 

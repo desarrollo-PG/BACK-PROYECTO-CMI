@@ -43,7 +43,8 @@ class UsuarioService {
                     nombrecontactoemergencia: true,
                     telefonoemergencia:       true,
                     observaciones:            true,
-                    rutafotoperfil:           true
+                    rutafotoperfil:           true,
+                    fkclinica:                true
                 },
                 orderBy:{
                     usuario: 'asc'
@@ -95,42 +96,63 @@ class UsuarioService {
         }
     }
 
-    async obtenerUsuarioPorRol(rol){
-        try{
-            if(!rol || isNaN(parseInt(rol))){
-                return{
+    async obtenerUsuarioPorRol(roles) {
+        try {
+            // Validar que roles exista
+            if (!roles) {
+                return {
                     success: false,
-                    message: 'Rol invalido'
+                    message: 'Roles inválidos'
+                };
+            }
+
+            // Convertir a array si viene como string (ej: "2,6,7")
+            let rolesArray;
+            if (typeof roles === 'string') {
+                rolesArray = roles.split(',').map(r => parseInt(r.trim()));
+            } else if (Array.isArray(roles)) {
+                rolesArray = roles.map(r => parseInt(r));
+            } else {
+                rolesArray = [parseInt(roles)];
+            }
+
+            // Validar que todos los valores sean números válidos
+            if (rolesArray.some(r => isNaN(r))) {
+                return {
+                    success: false,
+                    message: 'Uno o más roles son inválidos'
                 };
             }
 
             const usuarioPorRol = await prisma.usuario.findMany({
-                select:{
+                select: {
                     idusuario: true,
-                    nombres:   true,
-                    apellidos: true
+                    nombres: true,
+                    apellidos: true,
+                    fkrol: true // Opcional: para saber qué rol tiene cada usuario
                 },
-                where:{
-                    fkrol: parseInt(rol)
+                where: {
+                    fkrol: {
+                        in: rolesArray // Usa el operador 'in' de Prisma
+                    }
                 },
-                orderBy:{
+                orderBy: {
                     usuario: 'asc'
                 }
             });
 
-            if(usuarioPorRol.length === 0){
-                console.log('Array vacío');
-                return{
+            if (usuarioPorRol.length === 0) {
+                return {
                     success: false,
-                    message: 'No se encontraron usuarios con ese rol'
+                    message: 'No se encontraron usuarios con esos roles'
                 };
             }
-            
-            return{
+
+            return {
                 success: true,
                 data: usuarioPorRol
-            }
-        }catch(error){
+            };
+        } catch (error) {
             console.error("Error en usuarioService al consultar por rol: ", error);
             throw error;
         }
@@ -139,7 +161,7 @@ class UsuarioService {
     async crearUsuario(usuarioData){
         try{
             const { fkrol, usuario, clave, nombres, apellidos, fechanacimiento, correo, puesto, profesion, telinstitucional, extension, telefonopersonal,
-                    nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado } = usuarioData;
+                    nombrecontactoemergencia, telefonoemergencia, rutafotoperfil, observaciones, usuariocreacion, estado, fkclinica } = usuarioData;
             // validar datos requeridos
             if(!usuario || !clave || !nombres || !apellidos || !correo){
                 return{
@@ -214,7 +236,7 @@ class UsuarioService {
                     correo:                   correo.toLowerCase(), 
                     puesto:                   puesto?.trim(), 
                     profesion:                profesion?.trim(), 
-                    telinstitucional:          telinstitucional?.trim(), 
+                    telinstitucional:         telinstitucional?.trim(), 
                     extension:                extension?.trim(), 
                     telefonopersonal:         telefonopersonal?.trim(),
                     nombrecontactoemergencia: nombrecontactoemergencia?.trim(), 
@@ -222,7 +244,8 @@ class UsuarioService {
                     rutafotoperfil:           rutafotoperfil?.trim(), 
                     observaciones:            observaciones?.trim(), 
                     usuariocreacion:          usuariocreacion,
-                    estado:                   parseInt(estado)
+                    estado:                   parseInt(estado),
+                    fkclinica:                parseInt(fkclinica)
                 },
                 select: {
                     fkrol:                    true,
@@ -233,14 +256,15 @@ class UsuarioService {
                     correo:                   true,
                     puesto:                   true,
                     profesion:                true,
-                    telinstitucional:          true,
+                    telinstitucional:         true,
                     extension:                true,
                     telefonopersonal:         true,
                     nombrecontactoemergencia: true,
                     telefonoemergencia:       true,
                     rutafotoperfil:           true,
                     observaciones:            true,
-                    estado:                   true
+                    estado:                   true,
+                    fkclinica:                true
                 }
             });
 
@@ -391,6 +415,10 @@ class UsuarioService {
                 dataParaActualizar.estado = updateData.estado;
             }
 
+            if(updateData.fkclinica){
+                dataParaActualizar.fkclinica = updateData.fkclinica;
+            }
+
             // Solo actualizar si hay cambios
             if (Object.keys(dataParaActualizar).length === 0) {
                 return {
@@ -408,7 +436,8 @@ class UsuarioService {
                     correo:    true,
                     nombres:   true,
                     apellidos: true,
-                    fkrol:     true
+                    fkrol:     true,
+                    fkclinica: true
                 }
             });
             
