@@ -10,7 +10,10 @@ class ClinicaService{
                     nombreclinica: true
                 },
                 where:{
-                    estado: 1
+                    estado: 1,
+                    idclinica:{
+                        in: [3,7,8]
+                    }
                 },
                 orderBy:{
                     nombreclinica: 'asc'
