@@ -80,6 +80,9 @@ class PacienteController {
           aldea:             true,
           direccion:         true
         },
+        where:{
+          estado: 1
+        },
         orderBy:{
           nombres: 'asc'
         }

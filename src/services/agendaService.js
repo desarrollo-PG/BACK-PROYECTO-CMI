@@ -33,19 +33,73 @@ class AgendaService{
             }
 
             let horaFormateada = horaatencion;
-    
+
             // Si viene en formato HH:mm:ss, usarla directamente
             // Si viene en formato HH:mm, agregar :00
             if (horaatencion.split(':').length === 2) {
-            horaFormateada = `${horaatencion}:00`;
+                horaFormateada = `${horaatencion}:00`;
+            }
+
+            const fechaConvertida = this.convertirFecha(fechaatencion);
+            const horaConvertida = new Date(`1970-01-01T${horaFormateada}Z`);
+
+            const existeExpediente = await prisma.expediente.findFirst({
+                where:{
+                    estado: 1,
+                    fkpaciente: parseInt(fkpaciente)
+                }
+            });
+
+            if(!existeExpediente){
+                return{
+                    success: false,
+                    message: 'Antes de agendar cita, cree el expediente al paciente'
+                };
+            }
+
+            // Verificar si ya existe una cita para el paciente en esa fecha y hora
+            const citaExistente = await prisma.agenda.findFirst({
+                where: {
+                    fkpaciente:    parseInt(fkpaciente),
+                    fechaatencion: fechaConvertida,
+                    horaatencion:  horaConvertida,
+                    estado: {
+                        not: 0
+                    }
+                }
+            });
+
+            if(citaExistente){
+                return{
+                    success: false,
+                    message: 'El paciente ya tiene cita programada en la fecha y hora seleccionada'
+                };
+            }
+
+            const citaExistenteUsuario = await prisma.agenda.findFirst({
+                where:{
+                    fkusuario:     parseInt(fkusuario),
+                    fechaatencion: fechaConvertida,
+                    horaatencion:  horaConvertida,
+                    estado:{
+                        not: 0
+                    }
+                }
+            });
+
+            if(citaExistenteUsuario){
+                return{
+                    success: false,
+                    message: 'El profesional ya tiene cita programada en la fecha y hora seleccionada'
+                };
             }
 
             const citaNueva = await prisma.agenda.create({
                 data:{
                     fkusuario:          parseInt(fkusuario),
                     fkpaciente:         parseInt(fkpaciente),
-                    fechaatencion:      this.convertirFecha(fechaatencion),
-                    horaatencion:       new Date(`1970-01-01T${horaFormateada}Z`),
+                    fechaatencion:      fechaConvertida,
+                    horaatencion:       horaConvertida,
                     comentario:         comentario,
                     transporte:         parseInt(transporte),
                     fechatransporte:    this.convertirFecha(fechatransporte),
@@ -72,12 +126,14 @@ class AgendaService{
 
             return{
                 success: true,
-                message: 'Cita creado exitosamente',
-                data: agendaData
+                message: 'Cita creada exitosamente',
+                data: citaNueva // Cambiado para devolver la cita creada
             };
         }catch(error){
-            console.error("Error al crear una cita en el service: ", error.message);
-            throw error;
+            return{
+                success: false,
+                message: 'Error al crear la cita: ' + error.message
+            };
         }
     }
 
@@ -160,15 +216,15 @@ class AgendaService{
                 data: agendaFormateada
             };
         }catch(error){
-            console.error("Error en agendaService: ", error.message);
-            throw error;
+            return{
+                success: false,
+                message: 'Error al obtener la cita: ' + error.message
+            };
         }
     }
 
     async obtenerCitasConTransporte(fecha) {
         try {
-            console.log('📅 Fecha recibida:', fecha);
-
             // Si no se proporciona fecha, usar la fecha actual en formato YYYY-MM-DD
             let fechaBusqueda = fecha;
             
@@ -179,8 +235,6 @@ class AgendaService{
                 const fechaLocal = new Date(hoy.getTime() - (offset * 60 * 1000));
                 fechaBusqueda = fechaLocal.toISOString().split('T')[0];
             }
-            
-            console.log('🔍 Buscando citas para:', fechaBusqueda);
 
             // SOLUCIÓN: Usar Prisma.sql para comparación exacta de fechas sin conversión
             const citasConTransporte = await prisma.agenda.findMany({
@@ -233,8 +287,6 @@ class AgendaService{
                     }
                 ]
             });
-
-            console.log('✅ Citas encontradas:', citasConTransporte.length);
 
             // Formatear las fechas y horas para el frontend
             const citasFormateadas = citasConTransporte.map(cita => {
@@ -306,9 +358,10 @@ class AgendaService{
                 fecha: fechaBusqueda
             };
         } catch (error) {
-            console.error("❌ Error en obtenerCitasConTransporte: ", error.message);
-            console.error("Stack:", error.stack);
-            throw error;
+            return{
+                success: false,
+                message: 'Error al obtener citas con transporte la cita: ' + error.message
+            };
         }
     }
 
@@ -345,6 +398,52 @@ class AgendaService{
                 horaFormateada = `${horaatencion}:00`;
             }
 
+            const fechaConvertida = this.convertirFecha(fechaatencion);
+            const horaConvertida = new Date(`1970-01-01T${horaFormateada}Z`);
+
+            // IMPORTANTE: Excluir la cita actual de la búsqueda
+            const citaExistentePaciente = await prisma.agenda.findFirst({
+                where: {
+                    fkpaciente:    parseInt(fkpaciente),
+                    fechaatencion: fechaConvertida,
+                    horaatencion:  horaConvertida,
+                    estado: {
+                        not: 0
+                    },
+                    idagenda: {
+                        not: parseInt(idagenda) // EXCLUIR LA CITA ACTUAL
+                    }
+                }
+            });
+
+            if(citaExistentePaciente){
+                return{
+                    success: false,
+                    message: 'El paciente ya tiene cita programada en la fecha y hora seleccionada'
+                };
+            }
+
+            const citaExistenteUsuario = await prisma.agenda.findFirst({
+                where:{
+                    fkusuario:     parseInt(fkusuario),
+                    fechaatencion: fechaConvertida,
+                    horaatencion:  horaConvertida,
+                    estado:{
+                        not: 0
+                    },
+                    idagenda: {
+                        not: parseInt(idagenda) // EXCLUIR LA CITA ACTUAL
+                    }
+                }
+            });
+
+            if(citaExistenteUsuario){
+                return{
+                    success: false,
+                    message: 'El profesional ya tiene cita programada en la fecha y hora seleccionada'
+                };
+            }
+
             // Formatear hora de transporte si existe
             let horaTransporteFormateada = null;
             if (horariotransporte) {
@@ -362,8 +461,8 @@ class AgendaService{
                 data:{
                     fkusuario:          parseInt(fkusuario),
                     fkpaciente:         parseInt(fkpaciente),
-                    fechaatencion:      this.convertirFecha(fechaatencion),
-                    horaatencion:       new Date(`1970-01-01T${horaFormateada}Z`),
+                    fechaatencion:      fechaConvertida,
+                    horaatencion:       horaConvertida,
                     comentario:         comentario || null,
                     transporte:         parseInt(transporte),
                     fechatransporte:    fechatransporte ? this.convertirFecha(fechatransporte) : null,
@@ -432,8 +531,10 @@ class AgendaService{
                 }
             };
         }catch(error){
-            console.error("Error al actualizar la cita en el service: ", error.message);
-            throw error;
+            return{
+                success: false,
+                message: 'Error al actualizar la cita: ' + error.message
+            };
         }
     }
 
@@ -475,8 +576,10 @@ class AgendaService{
                 message: 'Cita eliminada exitosamente'
             };
         }catch(error){
-            console.error("Error al eliminar la cita en el service: ", error.message);
-            throw error;
+            return{
+                success: false,
+                message: 'Error al eliminar la cita: ' + error.message
+            };
         }
     }
 }
