@@ -7,17 +7,19 @@ const checkRole = require('../middlewares/checkRole');
 
 router.get(
     '/consultaPorGenero/:genero',
-    // autenticacion.validarToken,
-    // autenticacion.verificarUsuarioEnBD,
-    // validarCambioClave,
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    checkRole(1,5),
     repoPacienteController.consultaPorGenero
 );
 
 router.get(
     '/consultaPorEdad/:tipoEdad',
-    // autenticacion.validarToken,
-    // autenticacion.verificarUsuarioEnBD,
-    // validarCambioClave,
+    autenticacion.validarToken,
+    autenticacion.verificarUsuarioEnBD,
+    validarCambioClave,
+    checkRole(1,5),
     repoPacienteController.consultarPorEdad
 );
 
