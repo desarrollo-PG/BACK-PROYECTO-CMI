@@ -10,6 +10,7 @@ router.post(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
+    checkRole(1,2,4,5,6,14),
     agendaController.crearCita
 );
 
@@ -18,7 +19,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,2,5,6),
+    checkRole(1,2,4,5,6,14),
     agendaController.obtenerCitas
 );
 

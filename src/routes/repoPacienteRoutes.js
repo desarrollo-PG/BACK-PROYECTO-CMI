@@ -10,7 +10,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,5),
+    checkRole(1,4,5),
     repoPacienteController.consultaPorGenero
 );
 
@@ -19,7 +19,7 @@ router.get(
     autenticacion.validarToken,
     autenticacion.verificarUsuarioEnBD,
     validarCambioClave,
-    checkRole(1,5),
+    checkRole(1,4,5),
     repoPacienteController.consultarPorEdad
 );
 
